@@ -18,9 +18,9 @@ every query, reads outside a tenant context return nothing, and writes with a mi
 are rejected by the database itself. The Eloquent scope remains as the first net and for
 developer ergonomics; the database is the net that cannot be forgotten.
 
-## Planned features
+## Features
 
-All behavior below is planned, not yet built; implementation follows `docs/phases.md`.
+Implementation follows `docs/phases.md`; items beyond Phase 1 are specified but not yet built.
 
 - Double-enforced isolation: `BelongsToTenant` global scope plus RLS policies keyed to a
   per-request `app.tenant_id` set with `SET LOCAL` semantics inside the request transaction.
@@ -45,12 +45,45 @@ All behavior below is planned, not yet built; implementation follows `docs/phase
 
 ## Stack
 
-- PHP 8.3 / Laravel 11.x, structured as a starter app (`app/`) plus a small internal Tenancy
+- PHP 8.3 / Laravel 12.x, structured as a starter app (`app/`) plus a small internal Tenancy
   package (`src/Tenancy`, namespace `TenantBase\Tenancy`).
 - PostgreSQL 16, required everywhere including tests: row-level security is the point. The app
   connects as a dedicated `NOSUPERUSER NOBYPASSRLS` role.
 - Laravel Sanctum (bundled) for API tokens; database drivers for queue, session, and cache.
 - Blade plus one static CSS file (no Node toolchain); Pest on PHPUnit; Laravel Pint.
+
+## Database setup
+
+The app never connects as a superuser: a superuser silently bypasses every row-level security
+policy, which would disable the isolation this project exists to provide. Create a dedicated
+role and two databases owned by it, running these as a PostgreSQL superuser once:
+
+```bash
+psql -U postgres -c "CREATE ROLE tenantbase_app LOGIN PASSWORD 'secret' NOSUPERUSER NOBYPASSRLS"
+psql -U postgres -c "CREATE DATABASE tenantbase OWNER tenantbase_app"
+psql -U postgres -c "CREATE DATABASE tenantbase_test OWNER tenantbase_app"
+```
+
+Migrations run as `tenantbase_app` as well. Owning the tables does not exempt the role from the
+policies, because every tenant-owned table also sets `FORCE ROW LEVEL SECURITY`.
+
+## Local setup
+
+```bash
+composer install
+cp .env.example .env          # point DB_* at tenantbase as tenantbase_app
+php artisan key:generate
+php artisan migrate
+php artisan serve
+```
+
+Tenants live at `{slug}.APP_DOMAIN`. With `APP_DOMAIN=localhost`, browsers resolve `*.localhost`
+to 127.0.0.1 natively; for a custom domain, add a wildcard host entry or wildcard DNS record.
+
+```bash
+php artisan test                # full suite against tenantbase_test
+./vendor/bin/pint --test        # code style
+```
 
 ## Documentation
 
@@ -68,6 +101,9 @@ All behavior below is planned, not yet built; implementation follows `docs/phase
 
 ## Status
 
-Planning stage: these documents are the complete specification and no application code exists
-yet. Implementation proceeds one phase at a time per `docs/phases.md`, and each phase must pass
-its verification checklist before the next begins.
+Phase 1 complete: PostgreSQL foundation, central auth, tenant resolution and context, the
+`memberships` table under row-level security, atomic provisioning, `tenant:create`, and the raw
+SQL isolation proof. Phases 2 to 5 add the Eloquent net and projects, invitations, metering and
+the JSON API, then queues, cache and operator tooling. Implementation proceeds one phase at a
+time per `docs/phases.md`, and each phase must pass its verification checklist before the next
+begins.
