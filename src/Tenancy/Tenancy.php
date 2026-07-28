@@ -67,17 +67,7 @@ class Tenancy
     public function deactivate(): void
     {
         $this->tenant = null;
-
-        try {
-            if ($this->connection()->transactionLevel() > 0) {
-                $this->setSetting(self::TENANT_GUC, '');
-            }
-        } catch (QueryException $e) {
-            Log::warning('tenancy.context_missing', [
-                'reason' => 'could not reset the tenant setting',
-                'exception' => $e::class,
-            ]);
-        }
+        $this->resetSetting(self::TENANT_GUC, '');
     }
 
     public function assertContext(string $subject): void
@@ -119,7 +109,7 @@ class Tenancy
             $this->tenant = $previous;
 
             if (! $ownsTransaction) {
-                $this->setSetting(self::TENANT_GUC, (string) ($previous?->getKey() ?? ''));
+                $this->resetSetting(self::TENANT_GUC, (string) ($previous?->getKey() ?? ''));
             }
         }
     }
@@ -163,7 +153,7 @@ class Tenancy
             $this->bypassing = $previous;
 
             if (! $ownsTransaction) {
-                $this->setSetting(self::BYPASS_GUC, $previous ? '1' : '');
+                $this->resetSetting(self::BYPASS_GUC, $previous ? '1' : '');
             }
         }
     }
@@ -175,6 +165,25 @@ class Tenancy
     private function setSetting(string $name, string $value): void
     {
         $this->connection()->select('select set_config(?, ?, true)', [$name, $value]);
+    }
+
+    /**
+     * Cleanup that runs in finally blocks. A dropped or aborted transaction has
+     * already discarded the setting, so failing here is not an error worth
+     * masking the exception that caused it.
+     */
+    private function resetSetting(string $name, string $value): void
+    {
+        try {
+            if ($this->connection()->transactionLevel() > 0) {
+                $this->setSetting($name, $value);
+            }
+        } catch (QueryException $e) {
+            Log::warning('tenancy.context_missing', [
+                'reason' => "could not reset {$name}",
+                'exception' => $e::class,
+            ]);
+        }
     }
 
     private function connection(): ConnectionInterface
