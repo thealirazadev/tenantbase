@@ -1,14 +1,27 @@
 <?php
 
+use App\Models\Membership;
 use App\Models\Tenant;
 use App\Models\User;
+use TenantBase\Tenancy\Tenancy;
 
 beforeEach(function (): void {
     $this->user = User::factory()->create();
 });
 
+afterEach(function (): void {
+    app(Tenancy::class)->deactivate();
+});
+
 it('resolves a tenant from the subdomain', function (): void {
-    Tenant::factory()->create(['slug' => 'acme', 'name' => 'Acme Inc']);
+    $tenant = Tenant::factory()->create(['slug' => 'acme', 'name' => 'Acme Inc']);
+
+    app(Tenancy::class)->runAs($tenant, function () use ($tenant): void {
+        Membership::factory()->owner()->create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $this->user->id,
+        ]);
+    });
 
     $this->actingAs($this->user)
         ->get('http://acme.tenantbase.test/')
