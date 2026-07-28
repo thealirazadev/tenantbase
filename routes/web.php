@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\TenantSignupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,5 +22,8 @@ Route::domain(config('tenantbase.domain'))->group(function (): void {
 
     Route::middleware('auth')->group(function (): void {
         Route::view('/', 'home')->name('home');
+
+        Route::get('/tenants/create', [TenantSignupController::class, 'create'])->name('tenants.create');
+        Route::post('/tenants', [TenantSignupController::class, 'store'])->name('tenants.store');
     });
 });
