@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\TenantPickerController;
 use App\Http\Controllers\TenantSignupController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,7 +22,7 @@ Route::domain(config('tenantbase.domain'))->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
     Route::middleware('auth')->group(function (): void {
-        Route::view('/', 'home')->name('home');
+        Route::get('/', [TenantPickerController::class, 'index'])->name('home');
 
         Route::get('/tenants/create', [TenantSignupController::class, 'create'])->name('tenants.create');
         Route::post('/tenants', [TenantSignupController::class, 'store'])->name('tenants.store');
