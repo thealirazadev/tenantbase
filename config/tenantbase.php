@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Membership;
+use App\Models\Tenant;
+
 return [
 
     /*
@@ -13,6 +16,21 @@ return [
     */
 
     'domain' => env('APP_DOMAIN', 'localhost'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Models
+    |--------------------------------------------------------------------------
+    |
+    | The Tenancy package never references application models directly; it
+    | resolves them through these class names.
+    |
+    */
+
+    'models' => [
+        'tenant' => Tenant::class,
+        'membership' => Membership::class,
+    ],
 
     /*
     |--------------------------------------------------------------------------
