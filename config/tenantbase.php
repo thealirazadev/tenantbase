@@ -2,6 +2,7 @@
 
 use App\Models\Membership;
 use App\Models\Tenant;
+use App\Models\User;
 
 return [
 
@@ -30,6 +31,7 @@ return [
     'models' => [
         'tenant' => Tenant::class,
         'membership' => Membership::class,
+        'user' => User::class,
     ],
 
     /*
