@@ -72,6 +72,14 @@ $matrix = [
         'created_at' => '2026-07-28 00:00:00',
         'updated_at' => '2026-07-28 00:00:00',
     ],
+    'projects' => fn (int $tenantId, int $userId): array => [
+        'tenant_id' => $tenantId,
+        'name' => 'Apollo',
+        'description' => 'Launch tooling',
+        'created_by' => $userId,
+        'created_at' => '2026-07-28 00:00:00',
+        'updated_at' => '2026-07-28 00:00:00',
+    ],
 ];
 
 beforeEach(function (): void {
