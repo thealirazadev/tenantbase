@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use TenantBase\Tenancy\Tenancy;
+use TenantBase\Tenancy\TenantScope;
 
 beforeEach(function (): void {
     $this->tenancy = app(Tenancy::class);
@@ -36,7 +37,9 @@ it('shows no rows without a context', function (): void {
         Membership::factory()->create(['tenant_id' => $this->acme->id]);
     });
 
-    expect(Membership::count())->toBe(0);
+    // Dropping the scope leaves row-level security as the only thing hiding
+    // the rows, which is exactly what this test is about.
+    expect(Membership::withoutGlobalScope(TenantScope::class)->count())->toBe(0);
 });
 
 it('rejects an insert whose tenant disagrees with the context', function (): void {

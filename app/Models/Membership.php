@@ -6,6 +6,7 @@ use Database\Factories\MembershipFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use TenantBase\Tenancy\BelongsToTenant;
 
 /**
  * @property int $id
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Membership extends Model
 {
     /** @use HasFactory<MembershipFactory> */
-    use HasFactory;
+    use BelongsToTenant, HasFactory;
 
     /**
      * tenant_id is deliberately absent: it comes from the active context, never
