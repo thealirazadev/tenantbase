@@ -136,7 +136,7 @@ method name is the grep target for audits; sanctioned call sites are listed in `
 
 ## Data model
 
-Tables named here are the contract; the coding agent must not rename them. FKs to `tenants.id`
+Tables named here are the contract; implementations must not rename them. FKs to `tenants.id`
 are `ON DELETE CASCADE`. "RLS" marks tenant-owned tables carrying the canonical policy.
 
 ### tenants (landlord, no RLS)
