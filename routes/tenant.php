@@ -13,6 +13,7 @@ Route::middleware(['auth', 'tenant.resolve', 'tenant.context', 'tenant.member'])
 
     Route::resource('projects', ProjectController::class)->except('show');
 
+    Route::get('/members', [MembershipController::class, 'index']);
     Route::put('/members/{membership}', [MembershipController::class, 'update']);
     Route::delete('/members/{membership}', [MembershipController::class, 'destroy']);
 });

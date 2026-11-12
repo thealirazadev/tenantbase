@@ -8,9 +8,20 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class MembershipController extends Controller
 {
+    public function index(): View
+    {
+        $memberships = Membership::query()->with('user')->orderBy('created_at')->get();
+
+        return view('members.index', [
+            'memberships' => $memberships,
+            'ownerCount' => $memberships->where('role', 'owner')->count(),
+        ]);
+    }
+
     public function update(Request $request, Membership $membership): RedirectResponse
     {
         Gate::authorize('update', $membership);

@@ -12,6 +12,7 @@
         <a class="brand" href="{{ url('/') }}">{{ $tenant->name }}</a>
         <nav>
             <a class="small" href="{{ url('/projects') }}">Projects</a>
+            <a class="small" href="{{ url('/members') }}">Members</a>
             @isset($role)
                 <span class="badge badge-{{ $role }}">{{ $role }}</span>
             @endisset
