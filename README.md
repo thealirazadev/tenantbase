@@ -20,7 +20,7 @@ developer ergonomics; the database is the net that cannot be forgotten.
 
 ## Features
 
-Implementation follows `docs/phases.md`; items beyond Phase 1 are specified but not yet built.
+Implementation follows `docs/phases.md`. Phases 1 and 2 are built (isolation, tenants, projects, roles, members); invitations, metering, the JSON API, and the tenant-aware cache/queues (Phases 3 to 5) are specified but not yet built.
 
 - Double-enforced isolation: `BelongsToTenant` global scope plus RLS policies keyed to a
   per-request `app.tenant_id` set with `SET LOCAL` semantics inside the request transaction.

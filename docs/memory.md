@@ -129,3 +129,17 @@ work; log every non-obvious decision with its reason. Keep entries short and dat
   committed `.env.example` uses the conventional port 5432; only the untracked local `.env`
   differs. Test tooling is Pest 4.7.5 on PHPUnit 12.5.30, pinned exactly with the lockfile
   committed.
+- 2026-11-12 - Phase 2 complete (round 2 portfolio pass): project CRUD, `ProjectPolicy` /
+  `MembershipPolicy`, members index, route-binding tenant check, last-owner guard. Verified
+  against PostgreSQL 16 as the `NOBYPASSRLS` role (97 tests) and by hand on a running server
+  with two owners demoting each other concurrently five times: one owner always remained.
+- 2026-11-12 - Found while building: the tenancy middleware ran after `SubstituteBindings`, so
+  binding any tenant-owned model threw `MissingTenantContext`. `TenancyServiceProvider` now
+  places resolve, context, and membership before `SubstituteBindings` in the priority list.
+- 2026-11-12 - Last-owner guard: `FOR UPDATE` cannot be combined with `count()` in
+  PostgreSQL, so the guard locks all owner rows (in id order, to avoid deadlocks) and counts in
+  PHP. Membership role changes go through `Membership::changeRole()` / `removeFromWorkspace()`.
+- 2026-11-12 - `ProjectPolicy` only defines `delete`: create and edit are open to every member,
+  which `EnsureMembership` already guarantees, so separate abilities would be dead code.
+- 2026-11-12 - CI: setup-php's pcov only instruments `src/` when it exists, which hid `app/`
+  (coverage read 47%); `pcov.directory=.` fixes it (92.7%). Gate set at 90.
