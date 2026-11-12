@@ -3,6 +3,7 @@
 namespace TenantBase\Tenancy;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use TenantBase\Tenancy\Exceptions\MissingTenantContext;
 
 /**
@@ -31,5 +32,24 @@ trait BelongsToTenant
 
             $model->setAttribute('tenant_id', $tenantId);
         });
+    }
+
+    /**
+     * The third net: a bound model must belong to the active tenant even when
+     * the scope is off (the sanctioned bypass), so a guessed id is a 404.
+     *
+     * @param  mixed  $value
+     * @param  string|null  $field
+     */
+    public function resolveRouteBinding($value, $field = null): ?Model
+    {
+        $model = parent::resolveRouteBinding($value, $field);
+        $tenantId = app(Tenancy::class)->id();
+
+        if ($model !== null && $tenantId !== null && (int) $model->getAttribute('tenant_id') !== $tenantId) {
+            throw (new ModelNotFoundException)->setModel(static::class, [$value]);
+        }
+
+        return $model;
     }
 }
