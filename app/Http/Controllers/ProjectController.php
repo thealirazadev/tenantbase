@@ -6,6 +6,7 @@ use App\Http\Requests\ProjectRequest;
 use App\Models\Project;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -47,6 +48,7 @@ class ProjectController extends Controller
 
     public function destroy(Project $project): RedirectResponse
     {
+        Gate::authorize('delete', $project);
         $project->delete();
 
         return redirect('/projects')->with('status', 'Project deleted.');

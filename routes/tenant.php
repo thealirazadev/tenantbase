@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,4 +12,7 @@ Route::middleware(['auth', 'tenant.resolve', 'tenant.context', 'tenant.member'])
     Route::view('/', 'tenant.dashboard')->name('tenant.dashboard');
 
     Route::resource('projects', ProjectController::class)->except('show');
+
+    Route::put('/members/{membership}', [MembershipController::class, 'update']);
+    Route::delete('/members/{membership}', [MembershipController::class, 'destroy']);
 });

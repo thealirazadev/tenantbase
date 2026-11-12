@@ -33,12 +33,14 @@
                             <td>{{ $project->created_at?->toDateString() }}</td>
                             <td>
                                 <a href="{{ url('/projects/'.$project->id.'/edit') }}">Edit</a>
+                                @can('delete', $project)
                                 <form method="POST" action="{{ url('/projects/'.$project->id) }}" class="inline-confirm">
                                     @csrf
                                     @method('DELETE')
                                     <label class="small"><input type="checkbox" name="confirm" value="1" required> Confirm</label>
                                     <button type="submit" class="btn btn-danger">Delete</button>
                                 </form>
+                                @endcan
                             </td>
                         </tr>
                     @endforeach
