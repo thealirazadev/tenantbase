@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -8,4 +9,6 @@ use Illuminate\Support\Facades\Route;
  */
 Route::middleware(['auth', 'tenant.resolve', 'tenant.context', 'tenant.member'])->group(function (): void {
     Route::view('/', 'tenant.dashboard')->name('tenant.dashboard');
+
+    Route::resource('projects', ProjectController::class)->except('show');
 });

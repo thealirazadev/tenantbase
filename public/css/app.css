@@ -322,3 +322,20 @@ tbody tr:last-child td {
 .list-links a:hover {
     background: var(--bg);
 }
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* No-JS destructive confirm: the checkbox is required before the button submits. */
+.inline-confirm {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 12px;
+}
