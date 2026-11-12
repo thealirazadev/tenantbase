@@ -52,4 +52,4 @@ jobs:
         run: vendor/bin/pint --test
 
       - name: Tests with coverage
-        run: php artisan test --coverage
+        run: php artisan test --coverage --min=90
