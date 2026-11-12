@@ -30,6 +30,8 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: pdo_pgsql, pgsql
           coverage: pcov
+          # pcov only instruments src/ by default when it exists; app/ needs it too.
+          ini-values: pcov.directory=.
 
       # Tests connect as a NOSUPERUSER NOBYPASSRLS role, never the superuser (docs/testing.md).
       - name: Create the app role and databases
