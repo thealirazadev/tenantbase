@@ -43,3 +43,11 @@ it('shows role controls only to an owner and marks the sole owner', function ():
     $this->actingAs($this->member)->get('http://acme.tenantbase.test/members')
         ->assertOk()->assertDontSee('Change role')->assertDontSee('Remove');
 });
+
+it('keeps the header role badge when the role picker renders', function (): void {
+    $html = $this->actingAs($this->owner)->get('http://acme.tenantbase.test/members')->getContent();
+
+    // One owner row plus the header badge; only Max's row is a member.
+    expect(substr_count($html, 'badge-owner'))->toBe(2)
+        ->and(substr_count($html, 'badge-member'))->toBe(1);
+});

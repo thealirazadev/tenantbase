@@ -33,8 +33,8 @@
                                         @method('PUT')
                                         <label class="sr-only" for="role-{{ $membership->id }}">Role for {{ $membership->user->name }}</label>
                                         <select id="role-{{ $membership->id }}" name="role">
-                                            @foreach (\App\Models\Membership::ROLES as $role)
-                                                <option value="{{ $role }}" @selected($membership->role === $role)>{{ $role }}</option>
+                                            @foreach (\App\Models\Membership::ROLES as $option)
+                                                <option value="{{ $option }}" @selected($membership->role === $option)>{{ $option }}</option>
                                             @endforeach
                                         </select>
                                         <button type="submit" class="btn btn-secondary">Change role</button>
