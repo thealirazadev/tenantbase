@@ -9,39 +9,40 @@
   `postgres` superuser, which silently bypasses every policy).
 - **The isolation proof is the flagship suite.** `IsolationProofTest` uses raw PDO statements,
   no Eloquent, to prove the database alone enforces isolation: context A sees only A's rows in
-  every tenant-owned table; no context sees zero rows; inserts and updates with a mismatched
-  `tenant_id` throw. Every new tenant-owned table is added to its matrix in the same commit
+  every tenant-owned table; no context sees zero rows; inserts with a mismatched `tenant_id` or
+  with no context throw. Every new tenant-owned table is added to its matrix in the same commit
   that creates the table.
-- **Concurrency tests are real.** The limit-race test opens two database connections, starts
-  two transactions competing for the last gauge slot, and asserts exactly one wins. No
-  sleep-and-hope; the guarded UPDATE's row lock is the thing under test.
+- **Concurrency.** The last-owner guard's row locking was checked by hand with two owners
+  demoting each other concurrently; the usage-limit race test (two connections competing for
+  the last gauge slot, exactly one wins) arrives with metering.
 - **RefreshDatabase transactions interact with tenant context.** Each test runs inside the
   trait's wrapping transaction; the middleware's begin/commit becomes a savepoint, and
   `set_config(..., true)` set inside a savepoint rolls back with it. Context can outlive a
   simulated request within one test, so `Tenancy::deactivate()` (which resets the GUC to `''`)
-  runs in middleware finally-blocks and in the base test case's teardown.
-- **Fakes over network**: `Mail::fake()` for invitations (plus one test rendering the mailable
-  for the accept URL), `Queue::fake()` where dispatch is the assertion, direct
-  `handle()`-with-middleware execution where job side effects are the assertion. No test sends
-  real mail or HTTP.
-- **Factories** for Tenant, User, Membership, Invitation, Project; tenant-owned factories
-  require an explicit tenant (no silently invented tenants). Helpers: `actingAsMember($tenant,
-  $role)` and `withTenant($tenant)` set up context the same way the middleware does.
+  runs in middleware finally-blocks and in the `afterEach` of every test file that activates a
+  tenant directly.
+- **No network in tests.** Nothing sends real mail or HTTP. When invitations and queued jobs
+  land, they use `Mail::fake()` and `Queue::fake()` where dispatch is the assertion.
+- **Factories** for Tenant, User, Membership, and Project; tenant-owned factories require an
+  explicit tenant (no silently invented tenants).
 
-### What to cover
+### What the suite covers
 
-Unit: slug validation (format, reserved list), invitation token hashing and expiry math, plan
-lookup with `null` limits, `UsageMeter` SQL parameter shapes, cache key prefixing.
+Unit: `Tenancy::activate()` refuses to run outside a transaction.
 
-Feature: auth (register, login throttle, logout); resolution (subdomain, unknown, suspended,
-`X-Tenant` on API only, subdomain/header mismatch 400); provisioning atomicity (forced failure
-after tenant insert rolls everything back) and the duplicate-slug race; scope filtering,
-auto-fill, `MissingTenantContext`; route-binding 404 with the scope disabled; policy matrix and
-the last-owner guard; invitation lifecycle, revoke, expiry boundary, double-accept, concurrent
-duplicate invites; limit races, quota boundary (999/1000/1001), month rollover, rollback
-not billing a failed request, reconcile; API envelope shapes and `X-Quota-Remaining`; job
-context restoration, orphaned jobs, dispatch-without-context; cache isolation; suspension; the
-bypass call-site grep audit.
+Feature: auth (register, duplicate email, login, login throttle, logout, account screens kept
+off tenant subdomains); resolution (subdomain, unknown 404, suspended 403, JSON envelope, guests
+sent to central login); the tenancy context (activate, deactivate, `runAs` restore, bypass
+setting, reason required, restore on exception); `SetTenantContext` (transaction opened, context
+cleared, rollback when the action throws); membership RLS and the raw PDO isolation matrix;
+`EnsureMembership`; provisioning atomicity (a failed owner insert leaves nothing), slug format,
+reserved and duplicate slugs, and `tenant:create`; scope filtering, auto-fill, and
+`MissingTenantContext`; route-binding 404 with the scope and RLS bypassed; project CRUD; the role
+policy matrix and the last-owner guard; the members screen; the workspace picker and its logged
+bypass.
+
+Still to come with the features that need them: invitation lifecycle, usage limits and quota
+boundaries, the JSON API, job context restoration, and cache isolation.
 
 ## Exact commands
 
@@ -73,19 +74,24 @@ Running the full system locally: `php artisan serve` (with `APP_DOMAIN=localhost
 resolution needs `*.localhost`, which modern browsers resolve to 127.0.0.1 natively),
 `php artisan queue:work`, and `php artisan schedule:work` when exercising the rollup.
 
-## CI plan
+## CI
 
-GitHub Actions on push and PR to `main`: a `postgres:16` service container; a setup step uses
-the superuser only to create the `tenantbase_app` role and the test database, then everything
-else connects as the app role (this split is load-bearing: tests must not run as superuser).
-Steps: checkout, PHP 8.3 with `pdo_pgsql`, `composer install` (cached), `./vendor/bin/pint
---test`, `php artisan test`. The workflow lands in Phase 5 with the README finalization.
+`.github/workflows/ci.yml` runs on every push to `main` and every pull request targeting `main`,
+as a matrix over PHP 8.3 and 8.4 on Ubuntu with a `postgres:16` service container. Steps:
 
-## Definition of "done" for a feature
+1. Checkout, then setup-php with `pdo_pgsql` and `pgsql`, and pcov for coverage with
+   `pcov.directory=.` so `app/` is instrumented as well as `src/`.
+2. As the `postgres` superuser, create the `tenantbase_app` role (`NOSUPERUSER NOBYPASSRLS`)
+   and the `tenantbase` and `tenantbase_test` databases. This is the only superuser step;
+   everything after it connects as the app role.
+3. `composer install --no-interaction --prefer-dist --no-progress`.
+4. `cp .env.example .env` and `php artisan key:generate`.
+5. `vendor/bin/pint --test`.
+6. `php artisan test --coverage --min=90`, which fails the job below 90% line coverage.
+
+## Before merging a change
 
 1. `./vendor/bin/pint --test` clean.
-2. `php artisan test` green on PostgreSQL, new tests included, isolation matrix updated if a
-   table was added.
-3. The feature's checklist items in `docs/phases.md` pass manually.
-
-One commit per feature, in the order listed in `docs/phases.md`.
+2. `php artisan test` green on PostgreSQL, new tests included, and the isolation matrix
+   updated if a tenant-owned table was added.
+3. With pcov installed locally, `php artisan test --coverage --min=90` matches the CI gate.
