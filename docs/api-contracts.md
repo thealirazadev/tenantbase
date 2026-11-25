@@ -2,7 +2,10 @@
 
 Three surfaces exist: the session-authenticated **web app** (server-rendered HTML, central
 domain plus tenant subdomains), the token-authenticated **JSON API** (`/api/v1`), and the
-**artisan commands**. All are agreed here before any code is written.
+**artisan commands**. This is the agreed contract for all three. Built so far: the central and
+tenant web routes for auth, the tenant picker, signup, projects and members, plus
+`tenant:create`. Invitations, usage, API tokens, the JSON API and the other artisan commands are
+designed here but not built yet (see Status in the README).
 
 Base URLs: central `https://APP_DOMAIN`, tenant `https://{slug}.APP_DOMAIN`. Timestamps are
 ISO-8601 UTC. `period` values are the first day of a month (`2026-07-01`).
@@ -220,9 +223,10 @@ addressed by slug or id.
 php artisan tenant:create "Acme Inc" --slug=acme --plan=free --owner-email=ada@example.com
 ```
 
-Provisions atomically (tenant, counters, and, when `--owner-email` matches an existing user,
-the owner membership; otherwise an owner invitation is created and mailed). `--slug` defaults
-to a slugified name; `--plan` defaults to `free`.
+Provisions atomically: the tenant row and its owner membership are created in one transaction,
+through the same `Tenant::provision` path the web signup uses. `--owner-email` is required and
+must belong to an existing user; the command does not create users or send invitations.
+`--slug` defaults to a slugified name; `--plan` defaults to `plans.default` (`free`).
 
 ```
 Tenant created.
@@ -233,7 +237,9 @@ Tenant created.
   owner:  ada@example.com (membership created)
 ```
 
-Failures: duplicate or reserved slug, unknown plan; nothing is persisted on failure.
+Failures: invalid, duplicate or reserved slug; unknown plan; missing or invalid
+`--owner-email`; no user with that email (`No user account exists for ada@example.com.`).
+Nothing is persisted on failure.
 
 ### tenant:run
 
