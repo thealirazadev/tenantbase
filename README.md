@@ -87,6 +87,13 @@ php artisan test                # full suite against tenantbase_test
 ./vendor/bin/pint --test        # code style
 ```
 
+Provision a tenant from the CLI. `--owner-email` must belong to an existing user; `--slug` defaults
+to a slug of the name and `--plan` to `plans.default`:
+
+```bash
+php artisan tenant:create "Acme Inc" --slug=acme --plan=free --owner-email=ada@example.com
+```
+
 ## Documentation
 
 | File | Contents |
