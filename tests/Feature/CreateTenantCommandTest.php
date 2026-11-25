@@ -3,6 +3,7 @@
 use App\Models\Membership;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use TenantBase\Tenancy\Tenancy;
 
 beforeEach(function (): void {
@@ -67,5 +68,31 @@ it('refuses an owner email with no account', function (): void {
         '--owner-email' => 'nobody@example.com',
     ])->assertFailed();
 
+    expect(Tenant::count())->toBe(0);
+});
+
+it('logs a failed provision as a failure, not as a success', function (): void {
+    $failing = new class extends Tenant
+    {
+        public static function provision(string $name, string $slug, string $plan, User $owner): never
+        {
+            throw new RuntimeException('database went away');
+        }
+    };
+    config(['tenantbase.models.tenant' => $failing::class]);
+    Log::spy();
+
+    $this->artisan('tenant:create', [
+        'name' => 'Acme Inc',
+        '--slug' => 'acme',
+        '--owner-email' => 'ada@example.com',
+    ])->assertFailed();
+
+    Log::shouldHaveReceived('error')
+        ->with('tenant.provision_failed', Mockery::on(
+            fn (array $context): bool => $context['slug'] === 'acme'
+                && $context['exception'] === RuntimeException::class
+        ))
+        ->once();
     expect(Tenant::count())->toBe(0);
 });

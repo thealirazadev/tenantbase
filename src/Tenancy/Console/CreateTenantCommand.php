@@ -64,7 +64,7 @@ class CreateTenantCommand extends Command
         try {
             $tenant = $tenantClass::provision($name, $slug, $plan, $owner);
         } catch (Throwable $e) {
-            Log::error('tenant.provisioned', ['slug' => $slug, 'exception' => $e::class]);
+            Log::error('tenant.provision_failed', ['slug' => $slug, 'exception' => $e::class]);
 
             return $this->reportFailure(['Could not provision the workspace. Nothing was saved.']);
         }
