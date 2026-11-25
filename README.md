@@ -20,7 +20,9 @@ developer ergonomics; the database is the net that cannot be forgotten.
 
 ## Features
 
-Implementation follows `docs/phases.md`. Phases 1 and 2 are built (isolation, tenants, projects, roles, members); invitations, metering, the JSON API, and the tenant-aware cache/queues (Phases 3 to 5) are specified but not yet built.
+Built today: isolation, tenants, projects, roles, and members. Invitations, metering, the JSON
+API, and the tenant-aware cache and queues are designed in `docs/architecture.md` and
+`docs/api-contracts.md` but not yet built; see Status below.
 
 - Double-enforced isolation: `BelongsToTenant` global scope plus RLS policies keyed to a
   per-request `app.tenant_id` set with `SET LOCAL` semantics inside the request transaction.
@@ -89,21 +91,19 @@ php artisan test                # full suite against tenantbase_test
 
 | File | Contents |
 |---|---|
-| [docs/PRD.md](docs/PRD.md) | Problem, target user, core features, non-goals, success criteria. |
 | [docs/architecture.md](docs/architecture.md) | Stack rationale, tenant context lifecycle, data model, RLS policy, flows, failure modes, invariants, layout. |
-| [docs/rules.md](docs/rules.md) | Binding engineering rules, tenancy rules included. |
-| [docs/phases.md](docs/phases.md) | Five implementation phases with exact commits and verification checklists. |
+| [docs/decisions.md](docs/decisions.md) | Design decisions and the reasons behind them, including bugs found along the way. |
 | [docs/design.md](docs/design.md) | Screens, role visibility matrix, tokens, states, accessibility. |
-| [docs/testing.md](docs/testing.md) | Test strategy (PostgreSQL-only), the isolation proof, commands, CI plan. |
+| [docs/testing.md](docs/testing.md) | Test strategy (PostgreSQL-only), the isolation proof, commands, CI. |
 | [docs/api-contracts.md](docs/api-contracts.md) | Error envelope, resolution contract, every route, API and CLI examples. |
-| [docs/launch-checklist.md](docs/launch-checklist.md) | Pre-production checks, isolation probes included. |
-| [docs/memory.md](docs/memory.md) | Working log and decisions record. |
 
 ## Status
 
-Phase 1 complete: PostgreSQL foundation, central auth, tenant resolution and context, the
-`memberships` table under row-level security, atomic provisioning, `tenant:create`, and the raw
-SQL isolation proof. Phases 2 to 5 add the Eloquent net and projects, invitations, metering and
-the JSON API, then queues, cache and operator tooling. Implementation proceeds one phase at a
-time per `docs/phases.md`, and each phase must pass its verification checklist before the next
-begins.
+Built: the PostgreSQL foundation, central auth, tenant resolution and context, `memberships`
+and `projects` under row-level security, the Eloquent scope and route-binding check, atomic
+provisioning, `tenant:create`, project CRUD, role policies, the members screen with the
+last-owner guard, and the raw SQL isolation proof.
+
+Not built yet: invitations, usage metering, the JSON API, tenant-aware queues and cache, and the
+remaining operator commands (`tenant:run`, `tenant:usage`, `tenant:suspend`, the usage rollup).
+Their design is in `docs/architecture.md` and `docs/api-contracts.md`.

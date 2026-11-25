@@ -35,7 +35,7 @@ code path reaches tenant data without the correct context or an explicit, logged
 
 ## Tech stack with rationale
 
-- **PHP 8.3 / Laravel 11.x** - Routing, Eloquent, queued jobs, scheduler, first-class testing.
+- **PHP 8.3 / Laravel 12.x** - Routing, Eloquent, queued jobs, scheduler, first-class testing.
   Exact versions pinned at install time, `composer.lock` committed.
 - **PostgreSQL 16, required everywhere including tests** - Row-level security is the core of
   the product; a test suite on SQLite would skip the very thing being sold. Trade-off: heavier
@@ -131,8 +131,9 @@ Notes that make this correct:
 
 `withoutTenancy(string $reason, Closure $fn)` opens a transaction if none is active, sets
 `app.tenancy_bypass = '1'` (transaction-scoped), disables the Eloquent scope for the closure,
-logs `tenancy.bypass` with reason and caller, and restores everything in a `finally`. The
-method name is the grep target for audits; sanctioned call sites are listed in `docs/rules.md`.
+logs `tenancy.bypass` with the reason and the current tenant id, and restores everything in a
+`finally`. The method name is the grep target for audits. The only call site today is the
+central workspace picker; see `docs/decisions.md` for why the bypass is read-only.
 
 ## Data model
 
